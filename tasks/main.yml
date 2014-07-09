@@ -19,6 +19,12 @@
 - name: activate service
   service: name=btsync enabled=yes
 
+- name: create group {{ btsync_user }}
+  group: name={{ btsync_user }} state=present
+
+- name: create user {{ btsync_user }}
+  user: name={{ btsync_user }} shell=/bin/sh groups={{ btsync_user }} state=present
+
 - name: create .sync directory
   file: path=/home/{{ btsync_user }}/.sync owner={{ btsync_user }} group={{ btsync_user }} mode=0700 state=directory
 
@@ -28,5 +34,10 @@
 
 - name: create folders
   file: path={{ item.path }} recurse=yes state=directory owner={{ btsync_user }} group={{ btsync_user }} mode=700
+  with_items: btsync_shared_folders
+  when: btsync_shared_folders is defined
+
+- name: Fix .SyncIgnore
+  lineinfile: dest={{ item.path }}/.SyncIgnore regexp='^lost\+found' line='lost+found' insertafter='OS generated files'
   with_items: btsync_shared_folders
   when: btsync_shared_folders is defined
